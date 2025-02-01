@@ -1,0 +1,12 @@
+{
+    "manifest_version": 3,
+    "name": "Interactive Editor Toggle",
+    "version": "1.0",
+    "description": "Toggle editing mode: click text to edit or images to replace.",
+    "permissions": ["activeTab", "scripting"],
+    "action": {
+      "default_popup": "popup.html",
+      "default_title": "Toggle Editor"
+    }
+  }
+  
