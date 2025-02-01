@@ -1,40 +1,35 @@
-// Local state to update button text in the popup.
-let isEditorActive = false;
-
-document.getElementById("toggle").addEventListener("click", () => {
+// Listen for toggle state changes.
+document.getElementById("editorToggle").addEventListener("change", function () {
+  const isActive = this.checked;
+  // Update the label accordingly.
+  document.getElementById("toggleText").textContent = isActive ? "Deactivate Editor" : "Activate Editor";
+  
   // Query the active tab.
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (!tabs || !tabs[0]) return;
     
-    // Inject the toggleEditor function into the active tab.
+    // Inject our toggleEditor function into the active tab.
     chrome.scripting.executeScript({
       target: { tabId: tabs[0].id },
-      function: toggleEditor
-    }, () => {
-      // Toggle local state to update the button text.
-      isEditorActive = !isEditorActive;
-      document.getElementById("toggle").textContent = isEditorActive 
-        ? "Deactivate Editor" 
-        : "Activate Editor";
+      function: toggleEditor,
+      args: [isActive]  // Pass the desired state to the function.
     });
   });
 });
 
 /**
  * This function is injected into the active page.
- * It toggles the editor mode: if not active, it attaches an event listener on the document
- * that handles clicks on text and image elements. If already active, it removes the event listener.
+ * It either activates or deactivates editor mode.
+ * @param {boolean} shouldActivate - true to activate, false to deactivate.
  */
-function toggleEditor() {
-  // Check if editor mode is active on the page.
-  if (window.__editorActive) {
-    // Remove the click event listener.
-    document.removeEventListener("click", window.__editorClickHandler, true);
-    window.__editorActive = false;
-    console.log("Editor mode deactivated.");
-  } else {
-    // Define the event handler that intercepts all clicks.
-    window.__editorClickHandler = function(e) {
+function toggleEditor(shouldActivate) {
+  // If shouldActivate is true, attach the click listener; if false, remove it.
+  if (shouldActivate) {
+    // If already activated, do nothing.
+    if (window.__editorActive) return;
+    
+    // Define and store the click handler function.
+    window.__editorClickHandler = function (e) {
       // Stop propagation so the page’s own click events aren’t triggered.
       e.stopPropagation();
       e.preventDefault();
@@ -48,24 +43,43 @@ function toggleEditor() {
         handleTextClick(target);
       }
     };
+  
     // Attach the event handler in the capture phase.
     document.addEventListener("click", window.__editorClickHandler, true);
     window.__editorActive = true;
     console.log("Editor mode activated.");
+  } else {
+    // Remove the event listener if it exists.
+    if (window.__editorActive && window.__editorClickHandler) {
+      document.removeEventListener("click", window.__editorClickHandler, true);
+      window.__editorActive = false;
+      console.log("Editor mode deactivated.");
+    }
   }
   
   // --- Helper Functions ---
   
-  // Makes a text element editable until it loses focus.
+  // Makes a text element editable until it loses focus, while preserving its layout.
   function handleTextClick(element) {
     // Avoid reactivating if already editing.
     if (element.isContentEditable) return;
+  
+    // Fix the layout to avoid jumps:
+    // Save the original display style.
+    const originalDisplay = element.style.display;
+    // Force the element to be inline-block.
+    element.style.display = "inline-block";
+    // Set a minimum width based on its current width.
+    element.style.minWidth = element.offsetWidth + "px";
   
     element.contentEditable = "true";
     element.focus();
   
     const disableEditing = () => {
       element.contentEditable = "false";
+      // Optionally restore the original display style.
+      element.style.display = originalDisplay;
+      // (You might also want to remove the minWidth style if desired.)
       element.removeEventListener("blur", disableEditing);
       console.log("Text edited to:", element.innerText);
     };
@@ -84,7 +98,7 @@ function toggleEditor() {
       const file = event.target.files[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = function(evt) {
+      reader.onload = function (evt) {
         imgElement.src = evt.target.result;
         console.log("Image replaced.");
       };

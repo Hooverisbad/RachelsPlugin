@@ -1,12 +1,16 @@
 {
-    "manifest_version": 3,
-    "name": "Interactive Editor Toggle",
-    "version": "1.0",
-    "description": "Toggle editing mode: click text to edit or images to replace.",
-    "permissions": ["activeTab", "scripting"],
-    "action": {
-      "default_popup": "popup.html",
-      "default_title": "Toggle Editor"
-    }
+  "manifest_version": 3,
+  "name": "Rachel's Super Cool Interactive Editor",
+  "version": "1.0",
+  "description": "Toggle editing mode: click text to edit or images to replace.",
+  "permissions": ["activeTab", "scripting"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Rachel's Editor Mode"
+  },
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
   }
-  
+}
